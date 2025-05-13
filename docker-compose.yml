@@ -6,6 +6,7 @@ x-common: &common
 services:
 
   frontend:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -16,6 +17,7 @@ services:
     <<: *common
 
   backend:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.backend
@@ -32,6 +34,7 @@ services:
     <<: *common
 
   model:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.model
