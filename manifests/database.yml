@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: titanic
+  name: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+        - name: database
+          image: mysql:9.2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secret
+                  key: password
+            - name: MYSQL_DATABASE
+              value: titanic_db
+          volumeMounts:
+            - name: titanic-db-data
+              mountPath: /data/db
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+      volumes:
+        - name: titanic-db-data
+          persistentVolumeClaim:
+            claimName: titanic-data-pvc
+        - name: init-script
+          configMap:
+            name: mysql-initdb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: titanic-data-pvc
+  namespace: titanic
+spec:
+  storageClassName: do-block-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-initdb
+  namespace: titanic
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS titanic_db;
+    USE titanic_db;
+    CREATE TABLE passengers (
+        survived BOOLEAN,
+        familysize INT,
+        fare INT,
+        sex INT,
+        age INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: titanic
+  name: database-svc
+spec:
+  selector:
+    app: database
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: ClusterIP

@@ -1,0 +1,9 @@
+resources:
+- frontend.yml
+- backend.yml
+- database.yml
+- model.yml
+
+commonAnnotations:
+  creator: jake
+  requestor: jake
